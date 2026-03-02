@@ -23,5 +23,6 @@ clawhub install aukaukauk/scihub-paper-downloader
 **Claude Code**:
 
 ```
-/plugin install scihub-paper-downloader@aukaukauk/scihub-paper-downloader
+/plugin marketplace add aukaukauk/scihub-paper-downloader
+/plugin install scihub-paper-downloader@aukaukauk-scihub
 ```
