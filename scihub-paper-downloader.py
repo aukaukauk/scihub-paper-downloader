@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve a DOI to a direct PDF URL through Sci-Hub/Sci-Net.
+"""Resolve a DOI to a direct PDF URL through Sci-Hub.
 
 Zero dependencies. Python standard library only.
 """
@@ -42,6 +42,10 @@ UA = (
 PDF_PATTERNS = (
     re.compile(r'<(?:iframe|embed|object)[^>]+(?:src|data)=["\']([^"\']+)["\']', re.I),
     re.compile(r'["\']((?:https?:)?//[^"\']+?(?:\.pdf|/pdf)[^"\']*)["\']', re.I),
+)
+OA_HINT_PATTERN = re.compile(
+    r'<block-rounded[^>]+class\s*=\s*["\'][^"\']*\bopenaccess\b[^"\']*["\'][^>]*>(?:(?!</block-rounded>).)*?<a[^>]+href\s*=\s*["\']([^"\']+)["\']',
+    re.I | re.S,
 )
 
 
@@ -211,6 +215,20 @@ def _is_pdf(browser: Browser, url: str) -> bool:
         return False
 
 
+def _extract_oa_link(html: str, page_url: str) -> str:
+    match = OA_HINT_PATTERN.search(html)
+    if not match:
+        return ""
+    candidate = match.group(1).strip()
+    if not candidate:
+        return ""
+    if candidate.startswith("//"):
+        candidate = f"https:{candidate}"
+    else:
+        candidate = urljoin(page_url, candidate)
+    return _canonicalize(candidate)
+
+
 def _mirror_list() -> tuple[str, ...]:
     raw = os.environ.get("SCIHUB_MIRRORS", "")
     if raw.strip():
@@ -225,6 +243,7 @@ def resolve_pdf(doi: str) -> tuple[str, str]:
     safe_doi = quote(normalized, safe="/:().-_")
     saw_not_found = False
     saw_mirror_error = False
+    oa_link = ""
     for mirror in _mirror_list():
         browser = Browser()
         try:
@@ -238,13 +257,15 @@ def resolve_pdf(doi: str) -> tuple[str, str]:
         title = _extract_title(html).lower()
         if "not available through sci-hub" in title or "no articles found" in title:
             saw_not_found = True
+            if not oa_link:
+                oa_link = _extract_oa_link(html, page_url)
             continue
         for candidate in _iter_pdf_candidates(html, page_url):
             if _is_pdf(browser, candidate):
                 return STATUS_FOUND, candidate
         saw_mirror_error = True
     if saw_not_found:
-        return STATUS_NOT_FOUND, ""
+        return STATUS_NOT_FOUND, oa_link
     if saw_mirror_error:
         return STATUS_MIRROR_ERROR, ""
     return STATUS_NOT_FOUND, ""
@@ -254,11 +275,13 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: scihub-paper-downloader.py <DOI>", file=sys.stderr)
         sys.exit(1)
-    status, pdf_url = resolve_pdf(sys.argv[1])
+    status, url = resolve_pdf(sys.argv[1])
     if status == STATUS_FOUND:
-        print(pdf_url)
+        print(url)
         sys.exit(0)
     print(status)
+    if status == STATUS_NOT_FOUND and url:
+        print(f"OA_LINK {url}")
     if status == STATUS_NOT_FOUND:
         sys.exit(1)
     if status == STATUS_MIRROR_ERROR:

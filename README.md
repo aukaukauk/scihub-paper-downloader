@@ -28,8 +28,9 @@ Output:
 
 - success: prints only the final PDF URL
 - invalid input: prints only `INVALID_INPUT`
-- paper unavailable: prints only `NOT_FOUND`
-- mirror or anti-bot failure: prints only `MIRROR_ERROR`
+- paper unavailable: prints `NOT_FOUND`
+- if the Sci-Hub not-found page includes an OA link, the script prints `OA_LINK <url>` on the next line
+- upstream resolution inconclusive: prints only `MIRROR_ERROR`
 
 Examples:
 
@@ -44,6 +45,7 @@ python3 scihub-paper-downloader.py 10.1145/3641289
 - Sci-Hub mirror retries
 - ALTCHA verification when Sci-Hub shows the anti-bot page
 - redirects from Sci-Hub to Sci-Net
+- extraction of OA links that Sci-Hub itself shows on not-found pages
 - PDF verification before returning a link
 
 ## Notes
