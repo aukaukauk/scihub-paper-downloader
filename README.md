@@ -12,8 +12,16 @@ python3 scihub-paper-downloader.py <DOI>
 
 ## Install
 
+For Claude Code, Codex, OpenCode, and other tools using the skills CLI:
+
 ```bash
 npx skills add aukaukauk/scihub-paper-downloader
+```
+
+For OpenClaw via ClawHub:
+
+```bash
+clawhub install scihub-paper-downloader
 ```
 
 Output:
