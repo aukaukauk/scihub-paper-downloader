@@ -10,6 +10,12 @@ Zero dependencies. Python standard library only.
 python3 scihub-paper-downloader.py <DOI>
 ```
 
+## Install
+
+```bash
+npx skills add aukaukauk/scihub-paper-downloader
+```
+
 Output:
 
 - success: prints only the final PDF URL
